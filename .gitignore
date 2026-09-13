@@ -1,0 +1,35 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+
+# ===== PyInstaller 产物 =====
+dist/
+
+# ===== 运行数据 (不上传) =====
+uploads/
+*.pkl
+*.db
+*.sqlite3
+
+# ===== 测试样本数据 =====
+测试数据/
+*.xlsx
+*.xls
+*.zip
+
+# ===== 编辑器 =====
+.vscode/
+.idea/
+
+# ===== 系统文件 =====
+Thumbs.db
+.DS_Store
+# ===== 部署脚本 =====
+deploy/
+
+# ===== 调试/示例脚本 =====
+_debug_*.py
+generate_sample.py
+libs/
