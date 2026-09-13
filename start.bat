@@ -1,25 +1,16 @@
 @echo off
 chcp 65001 >nul
-REM CPK-PCBA - 启动脚本
-REM
-REM 首次运行需要安装依赖, 请执行:
-REM   pip install -r requirements.txt
-REM
-REM 若系统沙箱限制写入, 依赖已安装到临时目录 %TEMP%\ta_libs
-REM 本脚本会自动设置 PYTHONPATH 指向该目录
-
-set PYTHON_EXE=C:\Users\凯伦\AppData\Local\Programs\Python\Python313\python.exe
-set PYTHONPATH=%TEMP%\ta_libs
-set DATA_DIR=%TEMP%\ta_data
-set PYTHONDONTWRITEBYTECODE=1
-
+REM CPK-PCBA - 局域网服务器部署启动脚本
+REM 要求: 已安装 Python 3.13 并加入 PATH, 已执行 pip install -r requirements.txt
+setlocal
+set DATA_DIR=%~dp0data
 echo ========================================
-echo   CPK-PCBA
+echo   CPK-PCBA 测试分析系统 (局域网服务器)
 echo ========================================
 echo.
-echo 正在启动 Flask 应用...
-echo 访问地址: http://127.0.0.1:5000
-echo 按 Ctrl+C 停止
+echo 正在启动服务...
+echo 本机访问:   http://127.0.0.1:5000
+echo 局域网访问: http://服务器IP:5000   (ipconfig 查看 IP)
+echo 关闭本窗口即停止服务
 echo.
-
-"%PYTHON_EXE%" -B app.py
+python -B app.py --serve
