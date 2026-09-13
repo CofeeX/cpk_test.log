@@ -1,0 +1,881 @@
+{% extends "base.html" %}
+
+{% block title %}数据统计 - CPK-PCBA{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h4 class="mb-0"><i class="bi bi-bar-chart-steps"></i> 数据统计汇总</h4>
+    </div>
+    <div class="col-md-6 text-end">
+        {% if has_data %}
+        <span class="badge bg-primary me-2" id="statsFileBadge">{{ filename }}</span>
+        <span class="text-muted small" id="statsProductLabel">{{ product_category }}</span>
+        {% else %}
+        <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> 请先上传 Excel 文件</span>
+        {% endif %}
+    </div>
+</div>
+
+{% if not has_data %}
+<div class="card shadow-sm">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-cloud-upload text-muted" style="font-size: 3rem;"></i>
+        <h5 class="mt-3 text-muted">暂无数据</h5>
+        <p class="text-muted">请先回到首页上传 Excel 文件</p>
+        <a href="/" class="btn btn-primary"><i class="bi bi-house"></i> 返回首页</a>
+    </div>
+</div>
+{% else %}
+
+<div class="card shadow-sm border-primary stats-card">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center stats-card-header">
+        <h6 class="mb-0"><i class="bi bi-list-columns-reverse"></i> 统计列表
+            <span class="badge bg-light text-primary ms-1" id="statsCountBadge">0</span>
+        </h6>
+        <div>
+            <button class="btn btn-sm btn-light text-primary" id="exportStatsBtn">
+                <i class="bi bi-file-earmark-excel"></i> 导出 Excel
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0 stats-card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 stats-table" id="statsTable">
+                <thead class="table-primary stats-thead">
+                    <tr id="statsHeaderRow">
+                        <th class="text-left sortable" data-sort="index" draggable="true">#</th>
+                        <th class="text-left sortable" data-sort="item_name" draggable="true">项目名称</th>
+                        <th class="text-left sortable" data-sort="item_note" draggable="true">项目备注</th>
+                        <th class="text-left sortable" data-sort="spec_lower" draggable="true">下限</th>
+                        <th class="text-left sortable" data-sort="spec_upper" draggable="true">上限</th>
+                        <th class="text-left sortable" data-sort="mean" draggable="true">平均值</th>
+                        <th class="text-left sortable" data-sort="std" draggable="true">标准差</th>
+                        <th class="text-left sortable" data-sort="cp" draggable="true">CP</th>
+                        <th class="text-left sortable" data-sort="cpk" draggable="true">CPK</th>
+                        <th class="text-left sortable" data-sort="count" draggable="true">数据量</th>
+                        <th class="text-left sortable" data-sort="pass_rate" draggable="true">合格率</th>
+                    </tr>
+                </thead>
+                <tbody id="statsTableBody">
+                    <tr>
+                        <td colspan="11" class="text-center py-4 text-muted">
+                            <div class="spinner-border spinner-border-sm"></div> 加载中...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 悬停图表预览浮层 -->
+<div id="rowPreview" class="row-preview" style="display:none;">
+    <div class="row-preview-title" id="rowPreviewTitle"></div>
+    <div class="row-preview-chart" id="rowPreviewChart"></div>
+    <div class="row-preview-stats" id="rowPreviewStats"></div>
+</div>
+
+{% endif %}
+
+<style>
+    /* 表格卡片: 可滚动内容区, 表头固定 */
+    .stats-card {
+        position: sticky;
+        top: 56px;
+        z-index: 10;
+    }
+    /* 卡片标题栏: 在顶部导航下方固定 */
+    .stats-card-header {
+        position: sticky;
+        top: 56px;
+        z-index: 120;
+        border-radius: 0 !important;
+    }
+    /* 卡片内容: 自身滚动容器, 固定最大高度 */
+    .stats-card-body {
+        max-height: calc(100vh - 56px - 48px - 40px); /* 视口 - 导航 - 卡片头 - 留白 */
+        overflow: auto;
+    }
+    /* 去除 table-responsive 自身的 overflow, 避免与外层滚动冲突 */
+    .stats-card-body > .table-responsive {
+        overflow: visible;
+    }
+    /* 关键: 表格必须使用 border-collapse: separate, 否则 sticky th 不生效 */
+    .stats-table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    /* 表头 thead th 吸附在 stats-card-body 滚动容器内顶部 (用 !important 确保 sticky 生效) */
+    table.stats-table thead.stats-thead th {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 50 !important;
+        background-color: #cfe2ff !important;
+        box-shadow: inset 0 -2px 0 #9ec5fe, 0 1px 2px rgba(0,0,0,0.08) !important;
+    }
+
+    .stats-table th {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+        position: relative;
+        padding: 0.6rem 0.8rem;
+    }
+    .stats-table th:hover {
+        background-color: rgba(13, 110, 253, 0.15) !important;
+    }
+    .stats-table th.sortable::after {
+        content: ' ⇅';
+        opacity: 0.4;
+        font-size: 0.7rem;
+    }
+    .stats-table th.sort-asc::after {
+        content: ' ▲';
+        opacity: 1;
+        color: #0d6efd;
+    }
+    .stats-table th.sort-desc::after {
+        content: ' ▼';
+        opacity: 1;
+        color: #0d6efd;
+    }
+    .stats-table th.dragging {
+        opacity: 0.4;
+        background-color: #0d6efd !important;
+        color: #fff !important;
+    }
+    .stats-table th.drag-over {
+        border-left: 3px solid #0d6efd;
+    }
+    .stats-table td {
+        text-align: left;
+        padding: 0.5rem 0.8rem;
+    }
+    .stats-table tbody tr {
+        cursor: default;
+        transition: background-color 0.15s;
+    }
+    .stats-table tbody tr:hover {
+        background-color: #e7f1ff !important;
+    }
+    .stats-table tbody tr.row-hover {
+        background-color: #dbe9ff !important;
+    }
+
+    .cp-good { color: #198754; font-weight: 600; }
+    .cp-warn { color: #fd7e14; font-weight: 600; }
+    .cp-bad { color: #dc3545; font-weight: 600; }
+    .pass-good { color: #198754; font-weight: 600; }
+    .pass-warn { color: #ffc107; font-weight: 600; }
+    .pass-bad { color: #dc3545; font-weight: 600; }
+
+    /* 悬停预览浮层 */
+    .row-preview {
+        position: fixed;
+        z-index: 1000;
+        background: #fff;
+        border: 1px solid #0d6efd;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        padding: 12px 16px;
+        width: 660px;
+        pointer-events: none;
+        transition: opacity 0.15s;
+    }
+    .row-preview-title {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #0d6efd;
+        margin-bottom: 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .row-preview-chart {
+        width: 100%;
+        height: 330px;
+    }
+    .row-preview-stats {
+        font-size: 0.72rem;
+        color: #666;
+        margin-top: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .row-preview-stats span {
+        background: #f0f4ff;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    {% if has_data %}
+    const tbody = document.getElementById("statsTableBody");
+    const countBadge = document.getElementById("statsCountBadge");
+    const headerRow = document.getElementById("statsHeaderRow");
+    const previewEl = document.getElementById("rowPreview");
+    const previewTitle = document.getElementById("rowPreviewTitle");
+    const previewChart = document.getElementById("rowPreviewChart");
+    const previewStats = document.getElementById("rowPreviewStats");
+
+    let allStats = [];
+    let currentSort = { key: null, dir: 'asc' };
+    let currentColOrder = [];
+    let previewChartInstance = null;
+    let previewTimer = null;
+
+    // CP/CPK 等级判断
+    function cpClass(v) {
+        if (v == null) return '';
+        if (v >= 1.33) return 'cp-good';
+        if (v >= 1.0) return 'cp-warn';
+        return 'cp-bad';
+    }
+    function cpText(v) {
+        if (v == null) return '-';
+        return Number(v).toFixed(2);
+    }
+    function stdText(v) {
+        if (v == null) return '-';
+        return Number(v).toFixed(2);
+    }
+    function passClass(v) {
+        if (v == null) return '';
+        if (v >= 95) return 'pass-good';
+        if (v >= 80) return 'pass-warn';
+        return 'pass-bad';
+    }
+
+    function renderTable() {
+        let data = [...allStats];
+        if (currentSort.key) {
+            data.sort((a, b) => {
+                let va = a[currentSort.key];
+                let vb = b[currentSort.key];
+                if (va == null && vb == null) return 0;
+                if (va == null) return 1;
+                if (vb == null) return -1;
+                if (typeof va === 'number' && typeof vb === 'number') {
+                    return currentSort.dir === 'asc' ? va - vb : vb - va;
+                }
+                return currentSort.dir === 'asc'
+                    ? String(va).localeCompare(String(vb), 'zh')
+                    : String(vb).localeCompare(String(va), 'zh');
+            });
+        }
+
+        tbody.innerHTML = data.map((s, i) => {
+            const idx = allStats.indexOf(s) + 1;
+            // 平均值精度与规格值小数位数一致
+            const _suD = s.spec_upper_str ? (s.spec_upper_str.split('.')[1] || '').length : 0;
+            const _slD = s.spec_lower_str ? (s.spec_lower_str.split('.')[1] || '').length : 0;
+            const _specD = Math.max(3, _suD, _slD);
+            const meanVal = s.mean != null ? s.mean.toFixed(_specD) : '-';
+            const stdVal = s.std != null ? stdText(s.std) : '-';
+            const passRate = s.pass_rate != null ? `${s.pass_rate}%` : '-';
+            const passCls = passClass(s.pass_rate);
+            const cpCls = cpClass(s.cp);
+            const cpkCls = cpClass(s.cpk);
+
+            return `
+                <tr data-item-name="${s.item_name}">
+                    <td class="text-muted">${idx}</td>
+                    <td><strong>${s.item_name}</strong></td>
+                    <td class="text-muted">${s.item_note || '-'}</td>
+                    <td>${s.spec_lower != null ? (s.spec_lower_str || s.spec_lower) : '-'}</td>
+                    <td>${s.spec_upper != null ? (s.spec_upper_str || s.spec_upper) : '-'}</td>
+                    <td class="fw-semibold">${meanVal}</td>
+                    <td>${stdVal}</td>
+                    <td class="${cpCls}">${cpText(s.cp)}</td>
+                    <td class="${cpkCls}">${cpText(s.cpk)}</td>
+                    <td>${s.count ?? '-'}</td>
+                    <td class="${passCls}">${passRate}</td>
+                </tr>
+            `;
+        }).join('') || `<tr><td colspan="11" class="text-center py-4 text-muted">暂无数据</td></tr>`;
+
+        // 绑定行悬停预览
+        bindRowHover();
+    }
+
+    // 行悬停预览逻辑
+    function bindRowHover() {
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach(row => {
+            row.addEventListener('mouseenter', () => {
+                const itemName = row.dataset.itemName;
+                if (!itemName) return;
+
+                // 取消之前的定时器
+                if (previewTimer) clearTimeout(previewTimer);
+
+                previewTimer = setTimeout(() => {
+                    showPreview(row, itemName);
+                }, 300);
+            });
+            row.addEventListener('mouseleave', () => {
+                if (previewTimer) {
+                    clearTimeout(previewTimer);
+                    previewTimer = null;
+                }
+                hidePreview();
+            });
+            row.addEventListener('mousemove', (e) => {
+                movePreview(e);
+            });
+        });
+    }
+
+    function showPreview(row, itemName) {
+        // 找到对应统计数据
+        const stat = allStats.find(s => s.item_name === itemName);
+        if (!stat) return;
+
+        previewTitle.textContent = itemName + (stat.item_note ? ' · ' + stat.item_note : '');
+
+        // 显示统计信息
+        const parts = [];
+        if (stat.mean != null) {
+            const _suD = stat.spec_upper_str ? (stat.spec_upper_str.split('.')[1] || '').length : 0;
+            const _slD = stat.spec_lower_str ? (stat.spec_lower_str.split('.')[1] || '').length : 0;
+            const _specD = Math.max(3, _suD, _slD);
+            parts.push(`均值: ${stat.mean.toFixed(_specD)}`);
+        }
+        if (stat.std != null) parts.push(`σ: ${Number(stat.std).toFixed(2)}`);
+        if (stat.cp != null) parts.push(`CP: ${Number(stat.cp).toFixed(2)}`);
+        if (stat.cpk != null) parts.push(`CPK: ${Number(stat.cpk).toFixed(2)}`);
+        if (stat.pass_rate != null) parts.push(`合格率: ${stat.pass_rate}%`);
+        previewStats.innerHTML = parts.map(p => `<span>${p}</span>`).join('');
+
+        // 定位浮层
+        const rect = row.getBoundingClientRect();
+        let left = rect.right + 16;
+        let top = rect.top;
+        if (left + 660 > window.innerWidth) {
+            left = rect.left - 676;
+        }
+        if (left < 10) left = 10;
+        if (top + 430 > window.innerHeight) {
+            top = window.innerHeight - 440;
+        }
+        if (top < 60) top = 60;
+
+        previewEl.style.left = left + 'px';
+        previewEl.style.top = top + 'px';
+        previewEl.style.display = 'block';
+        previewEl.style.opacity = '0';
+        requestAnimationFrame(() => {
+            previewEl.style.opacity = '1';
+        });
+
+        // 优先使用首页分组数据 (含同组其他 series)
+        if (stat.group_series && stat.group_series.length > 0) {
+            renderGroupPreview(stat, itemName);
+        } else {
+            // 回退: 单独请求该项目图表
+            fetch(`/api/chart-data?item=${encodeURIComponent(itemName)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data || !data.x_axis) {
+                        previewChart.innerHTML = '<div class="text-muted text-center py-4 small">无图表数据</div>';
+                        return;
+                    }
+                    renderSinglePreview(data, itemName);
+                })
+                .catch(() => {
+                    previewChart.innerHTML = '<div class="text-danger text-center py-4 small">加载失败</div>';
+                });
+        }
+    }
+
+    // 计算友好的 Y 轴边界, 确保规格上下限恰好对齐刻度位置 (与首页一致)
+    function computeNiceAxisBounds(yMin, yMax, specLower, specUpper) {
+        if (yMin == null || yMax == null || yMax <= yMin) {
+            return { min: yMin, max: yMax, interval: null };
+        }
+        function decimals(v) {
+            if (v == null || isNaN(v)) return 0;
+            const s = String(v);
+            const dot = s.indexOf('.');
+            return dot >= 0 ? s.length - dot - 1 : 0;
+        }
+        function roundTo(v, d) {
+            const p = Math.pow(10, d);
+            return Math.round(v * p) / p;
+        }
+        const allVals = [yMin, yMax, specLower, specUpper].filter(v => v != null && !isNaN(v));
+        const maxDec = Math.max(3, allVals.length ? Math.max(...allVals.map(decimals)) : 3);
+        let niceMin = roundTo(yMin, maxDec);
+        let niceMax = roundTo(yMax, maxDec);
+        if (specLower != null && specUpper != null && specUpper > specLower) {
+            // 关键修复: 先圆整 specLower/specUpper 消除浮点误差
+            const sLower = roundTo(specLower, maxDec);
+            const sUpper = roundTo(specUpper, maxDec);
+            const specRange = roundTo(sUpper - sLower, maxDec);
+            const candidates = [3, 4, 5, 6];
+            let bestInterval = null;
+            for (const n of candidates) {
+                const interval = roundTo(specRange / n, maxDec);
+                // 关键验证: interval × n 必须等于 specRange (圆整后)
+                const check = roundTo(interval * n, maxDec);
+                if (Math.abs(check - specRange) > 1e-12) continue;
+                const id = decimals(interval);
+                if (id <= maxDec + 2) {
+                    bestInterval = interval;
+                    break;
+                }
+            }
+            if (bestInterval == null) {
+                bestInterval = specRange;
+            }
+            const kMin = Math.round((sLower - niceMin) / bestInterval);
+            niceMin = roundTo(sLower - kMin * bestInterval, maxDec);
+            const kMax = Math.round((niceMax - sUpper) / bestInterval);
+            niceMax = roundTo(sUpper + kMax * bestInterval, maxDec);
+            if (niceMin > roundTo(yMin, maxDec)) {
+                const k2 = Math.ceil((niceMin - roundTo(yMin, maxDec)) / bestInterval);
+                niceMin = roundTo(niceMin - k2 * bestInterval, maxDec);
+            }
+            if (niceMax < roundTo(yMax, maxDec)) {
+                const k2 = Math.ceil((roundTo(yMax, maxDec) - niceMax) / bestInterval);
+                niceMax = roundTo(niceMax + k2 * bestInterval, maxDec);
+            }
+            // 关键修复: 向上下各扩展一个 interval, 使规格线不紧贴 grid 边缘
+            niceMin = roundTo(niceMin - bestInterval, maxDec);
+            niceMax = roundTo(niceMax + bestInterval, maxDec);
+            return { min: niceMin, max: niceMax, interval: bestInterval };
+        }
+        const range = niceMax - niceMin;
+        const rawInterval = range / 5;
+        const magnitude = Math.pow(10, Math.floor(Math.log10(rawInterval)));
+        const residual = rawInterval / magnitude;
+        let niceInterval;
+        if (residual <= 1.5) niceInterval = magnitude;
+        else if (residual <= 3) niceInterval = 2 * magnitude;
+        else if (residual <= 7) niceInterval = 5 * magnitude;
+        else niceInterval = 10 * magnitude;
+        niceMin = roundTo(Math.floor(niceMin / niceInterval) * niceInterval, maxDec);
+        niceMax = roundTo(Math.ceil(niceMax / niceInterval) * niceInterval, maxDec);
+        // 关键修复: 单边规格时也确保 markLine 不紧贴 grid 边缘
+        if (specUpper != null && specLower == null) {
+            if (Math.abs(niceMax - specUpper) < 1e-12) {
+                niceMax = roundTo(niceMax + niceInterval, maxDec);
+            }
+        }
+        if (specLower != null && specUpper == null) {
+            if (Math.abs(niceMin - specLower) < 1e-12) {
+                niceMin = roundTo(niceMin - niceInterval, maxDec);
+            }
+        }
+        return { min: niceMin, max: niceMax, interval: roundTo(niceInterval, maxDec) };
+    }
+
+    // 基于字符串精度圆整规格值, 避免 IEEE 754 浮点误差 (与首页一致)
+    function roundSpecValue(v, str) {
+        if (v == null) return null;
+        if (isNaN(v)) return null;
+        if (str != null) {
+            const dot = str.indexOf('.');
+            const decimals = dot >= 0 ? str.length - dot - 1 : 0;
+            const p = Math.pow(10, decimals);
+            return Math.round(v * p) / p;
+        }
+        return v;
+    }
+
+    // 按首页格式渲染分组预览: 本行项目彩色, 同组其他灰色
+    function renderGroupPreview(stat, itemName) {
+        const xAxis = stat.group_x_axis || [];
+        const snList = stat.group_sn_list || [];
+        const seriesList = stat.group_series || [];
+        const su = stat.group_spec_upper;
+        const sl = stat.group_spec_lower;
+        const suStr = stat.group_spec_upper_str != null ? stat.group_spec_upper_str : (su != null ? String(su) : null);
+        const slStr = stat.group_spec_lower_str != null ? stat.group_spec_lower_str : (sl != null ? String(sl) : null);
+        const suVal = roundSpecValue(su, suStr);
+        const slVal = roundSpecValue(sl, slStr);
+
+        // 颜色: 本行用蓝色, 其他用浅灰
+        const HIGHLIGHT_COLOR = '#0d6efd';
+        const MUTED_COLOR = '#adb5bd';
+        const SPEC_COLOR = '#198754';
+
+        // 与首页一致: 规格线 (绿色实线, 标签 "上限/下限 + 原始字符串")
+        // 使用两点 coord 格式, 避免 ECharts yAxis 格式的渲染精度问题
+        const xDataLen = Math.max(1, (xAxis || []).length - 1);
+        const specMarkLine = [];
+        if (suVal != null) {
+            specMarkLine.push([
+                {coord: [0, suVal], name: '规格上限', lineStyle: { color: SPEC_COLOR, type: 'solid', width: 2 }, label: { formatter: '上限 ' + (suStr != null ? suStr : suVal), position: 'insideStartTop', color: SPEC_COLOR, fontWeight: 'bold', distance: 6 }},
+                {coord: [xDataLen, suVal]}
+            ]);
+        }
+        if (slVal != null) {
+            specMarkLine.push([
+                {coord: [0, slVal], name: '规格下限', lineStyle: { color: SPEC_COLOR, type: 'solid', width: 2 }, label: { formatter: '下限 ' + (slStr != null ? slStr : slVal), position: 'insideEndBottom', color: SPEC_COLOR, fontWeight: 'bold', distance: 6 }},
+                {coord: [xDataLen, slVal]}
+            ]);
+        }
+
+        // 使用友好边界算法, 确保规格上下限恰好对齐 Y 轴刻度
+        const allValues = seriesList.flatMap(s => s.values || []);
+        const dataMin = allValues.length ? Math.min(...allValues) : null;
+        const dataMax = allValues.length ? Math.max(...allValues) : null;
+        const lowerCandidates = [dataMin, slVal].filter(v => v != null && !isNaN(v));
+        const upperCandidates = [dataMax, suVal].filter(v => v != null && !isNaN(v));
+        const yMin = lowerCandidates.length ? Math.min(...lowerCandidates) : undefined;
+        const yMax = upperCandidates.length ? Math.max(...upperCandidates) : undefined;
+        const niceBounds = computeNiceAxisBounds(yMin, yMax, slVal, suVal);
+        const yMinAdj = niceBounds.min;
+        const yMaxAdj = niceBounds.max;
+        const yInterval = niceBounds.interval;
+
+        const echartsSeries = seriesList.map((s, idx) => {
+            const isHighlight = s.name === itemName;
+            // 规格线只附加到第一个 series
+            const perSeriesMarkLine = (idx === 0 && specMarkLine.length) ? [...specMarkLine] : [];
+
+            // 所有 series 的均值线: 本行粉红最上层, 其他组黄色
+            if (s.stats && s.stats.mean !== undefined) {
+                // 计算规格值小数位数, 均值精度与规格一致
+                const suDec = suStr ? (suStr.split('.')[1] || '').length : 0;
+                const slDec = slStr ? (slStr.split('.')[1] || '').length : 0;
+                const specDec = Math.max(3, suDec, slDec);
+                const meanStr = s.stats.mean.toFixed(specDec);
+                if (isHighlight) {
+                    // 本行均值线: 粉红色, z=20 最上层
+                    perSeriesMarkLine.push([
+                        {coord: [0, s.stats.mean], name: `${s.name}均值`, lineStyle: { color: '#e91e63', type: 'dashed', width: 2 }, label: { formatter: '均值 ' + meanStr, position: 'insideEndBottom', color: '#e91e63', fontWeight: 'bold', distance: 6 }},
+                        {coord: [xDataLen, s.stats.mean]}
+                    ]);
+                } else {
+                    // 其他组均值线: 黄色, z=5
+                    perSeriesMarkLine.push([
+                        {coord: [0, s.stats.mean], name: `${s.name}均值`, lineStyle: { color: '#ffc107', type: 'dashed', width: 1.5 }, label: { formatter: s.name + ' 均值 ' + meanStr, position: 'insideEndTop', color: '#ffc107', fontWeight: 'normal', fontSize: 10, distance: 6 }},
+                        {coord: [xDataLen, s.stats.mean]}
+                    ]);
+                }
+            }
+
+            return {
+                name: s.name,
+                type: 'line',
+                data: s.values || [],
+                smooth: true,
+                symbol: isHighlight ? 'circle' : 'none',
+                symbolSize: 5,
+                lineStyle: {
+                    width: isHighlight ? 2.5 : 1.2,
+                    color: isHighlight ? HIGHLIGHT_COLOR : MUTED_COLOR,
+                },
+                itemStyle: { color: isHighlight ? HIGHLIGHT_COLOR : MUTED_COLOR },
+                areaStyle: isHighlight && seriesList.length === 1 ? { opacity: 0.1, color: HIGHLIGHT_COLOR } : undefined,
+                markLine: perSeriesMarkLine.length ? { data: perSeriesMarkLine, symbol: 'none', animation: false } : undefined,
+                z: isHighlight ? 10 : 1,
+            };
+        });
+
+        const chartOption = {
+            tooltip: {
+                trigger: 'axis',
+                confine: true,
+                formatter: function(params) {
+                    if (!params || !params.length) return '';
+                    const idx = params[0].dataIndex;
+                    const sn = (snList[idx] !== undefined && snList[idx] !== '')
+                        ? snList[idx]
+                        : (xAxis[idx] || '');
+                    let html = `SN: ${sn}<br/>`;
+                    params.forEach(p => {
+                        const val = (p.value !== null && p.value !== undefined) ? p.value : '-';
+                        html += `${p.marker} ${p.seriesName}: ${val}<br/>`;
+                    });
+                    return html;
+                }
+            },
+            legend: {
+                show: seriesList.length > 1,
+                top: 0,
+                textStyle: { fontSize: 9 },
+                itemWidth: 12,
+                itemHeight: 8,
+            },
+            grid: { left: 60, right: 60, top: seriesList.length > 1 ? 40 : 25, bottom: 50 },
+            xAxis: {
+                type: 'category',
+                data: xAxis,
+                axisLabel: { rotate: 30, fontSize: 10 },
+                name: '时间',
+                nameLocation: 'middle',
+                nameGap: 35,
+                axisLine: { lineStyle: { color: '#999' } },
+            },
+            yAxis: { type: 'value', name: '测试值', min: yMinAdj, max: yMaxAdj,
+                interval: yInterval != null ? yInterval : undefined,
+                axisLabel: { formatter: function(v) { return v == null ? '' : String(v); } } },
+            series: echartsSeries,
+        };
+
+        if (!previewChartInstance) {
+            previewChartInstance = echarts.init(previewChart);
+        }
+        previewChartInstance.setOption(chartOption, true);
+        previewChartInstance.resize();
+    }
+
+    // 回退: 渲染单个项目预览
+    function renderSinglePreview(data, itemName) {
+        const HIGHLIGHT_COLOR = '#0d6efd';
+        const SPEC_COLOR = '#198754';
+        const su = data.spec_upper;
+        const sl = data.spec_lower;
+        const suStr = data.spec_upper_str != null ? data.spec_upper_str : (su != null ? String(su) : null);
+        const slStr = data.spec_lower_str != null ? data.spec_lower_str : (sl != null ? String(sl) : null);
+        const suVal = roundSpecValue(su, suStr);
+        const slVal = roundSpecValue(sl, slStr);
+
+        // 规格线 (两点 coord 格式, 避免渲染精度问题)
+        const xDataLen2 = Math.max(1, (data.x_axis || []).length - 1);
+        const specMarkLine = [];
+        if (suVal != null) {
+            specMarkLine.push([
+                {coord: [0, suVal], name: '规格上限', lineStyle: { color: SPEC_COLOR, type: 'solid', width: 2 }, label: { formatter: '上限 ' + suStr, position: 'insideStartTop', color: SPEC_COLOR, fontWeight: 'bold', distance: 6 }},
+                {coord: [xDataLen2, suVal]}
+            ]);
+        }
+        if (slVal != null) {
+            specMarkLine.push([
+                {coord: [0, slVal], name: '规格下限', lineStyle: { color: SPEC_COLOR, type: 'solid', width: 2 }, label: { formatter: '下限 ' + slStr, position: 'insideEndBottom', color: SPEC_COLOR, fontWeight: 'bold', distance: 6 }},
+                {coord: [xDataLen2, slVal]}
+            ]);
+        }
+
+        // 使用友好边界算法, 确保规格上下限恰好对齐 Y 轴刻度
+        const allValues = data.values || [];
+        const dataMin = allValues.length ? Math.min(...allValues) : null;
+        const dataMax = allValues.length ? Math.max(...allValues) : null;
+        const lowerCandidates = [dataMin, slVal].filter(v => v != null && !isNaN(v));
+        const upperCandidates = [dataMax, suVal].filter(v => v != null && !isNaN(v));
+        const yMin = lowerCandidates.length ? Math.min(...lowerCandidates) : undefined;
+        const yMax = upperCandidates.length ? Math.max(...upperCandidates) : undefined;
+        const niceBounds = computeNiceAxisBounds(yMin, yMax, slVal, suVal);
+        const yMinAdj = niceBounds.min;
+        const yMaxAdj = niceBounds.max;
+        const yInterval = niceBounds.interval;
+
+        const seriesData = [{
+            name: itemName,
+            type: 'line',
+            data: data.values || [],
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 5,
+            lineStyle: { width: 2.5, color: HIGHLIGHT_COLOR },
+            itemStyle: { color: HIGHLIGHT_COLOR },
+            areaStyle: { opacity: 0.1, color: HIGHLIGHT_COLOR },
+            markLine: specMarkLine.length ? { data: specMarkLine, symbol: 'none' } : undefined,
+        }];
+
+        const chartOption = {
+            grid: { left: 60, right: 60, top: 25, bottom: 50 },
+            tooltip: {
+                trigger: 'axis',
+                confine: true,
+                formatter: function(params) {
+                    if (!params || !params.length) return '';
+                    const idx = params[0].dataIndex;
+                    const snList = data.sn_list || [];
+                    const sn = (snList[idx] !== undefined && snList[idx] !== '')
+                        ? snList[idx]
+                        : (data.x_axis[idx] || '');
+                    let html = `SN: ${sn}<br/>`;
+                    params.forEach(p => {
+                        const val = (p.value !== null && p.value !== undefined) ? p.value : '-';
+                        html += `${p.marker} ${p.seriesName}: ${val}<br/>`;
+                    });
+                    return html;
+                }
+            },
+            xAxis: {
+                type: 'category',
+                data: data.x_axis,
+                axisLabel: { rotate: 30, fontSize: 10 },
+                name: '时间',
+                nameLocation: 'middle',
+                nameGap: 35,
+                axisLine: { lineStyle: { color: '#999' } },
+            },
+            yAxis: { type: 'value', name: '测试值', min: yMinAdj, max: yMaxAdj,
+                interval: yInterval != null ? yInterval : undefined,
+                axisLabel: { formatter: function(v) { return v == null ? '' : String(v); } } },
+            series: seriesData,
+        };
+        if (!previewChartInstance) {
+            previewChartInstance = echarts.init(previewChart);
+        }
+        previewChartInstance.setOption(chartOption, true);
+        previewChartInstance.resize();
+    }
+
+    function movePreview(e) {
+        // 可选: 跟随鼠标移动
+        const rect = previewEl.getBoundingClientRect();
+        let left = e.clientX + 20;
+        let top = e.clientY + 20;
+        if (left + rect.width > window.innerWidth) {
+            left = e.clientX - rect.width - 20;
+        }
+        if (top + rect.height > window.innerHeight) {
+            top = e.clientY - rect.height - 20;
+        }
+        previewEl.style.left = left + 'px';
+        previewEl.style.top = top + 'px';
+    }
+
+    function hidePreview() {
+        previewEl.style.display = 'none';
+        if (previewChartInstance) {
+            previewChartInstance.clear();
+        }
+    }
+
+    // 排序绑定
+    headerRow.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+            const key = th.dataset.sort;
+            if (currentSort.key === key) {
+                currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.key = key;
+                currentSort.dir = 'asc';
+            }
+            headerRow.querySelectorAll('th').forEach(h => {
+                h.classList.remove('sort-asc', 'sort-desc');
+            });
+            th.classList.add(currentSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+            renderTable();
+        });
+    });
+
+    // 列拖动重排
+    let dragSrcIdx = null;
+    const ths = Array.from(headerRow.querySelectorAll('th'));
+    currentColOrder = ths.map((_, i) => i);
+
+    ths.forEach((th, idx) => {
+        th.addEventListener('dragstart', (e) => {
+            dragSrcIdx = idx;
+            th.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', String(idx));
+        });
+        th.addEventListener('dragend', () => {
+            th.classList.remove('dragging');
+            headerRow.querySelectorAll('th').forEach(h => h.classList.remove('drag-over'));
+        });
+        th.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+        th.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            th.classList.add('drag-over');
+        });
+        th.addEventListener('dragleave', () => {
+            th.classList.remove('drag-over');
+        });
+        th.addEventListener('drop', (e) => {
+            e.preventDefault();
+            th.classList.remove('drag-over');
+            const dstIdx = idx;
+            if (dragSrcIdx === null || dragSrcIdx === dstIdx) return;
+
+            const tr = headerRow;
+            const allThs = Array.from(tr.querySelectorAll('th'));
+            const targetTh = allThs[dstIdx];
+            const sourceTh = allThs[dragSrcIdx];
+
+            if (dragSrcIdx < dstIdx) {
+                targetTh.after(sourceTh);
+            } else {
+                targetTh.before(sourceTh);
+            }
+
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach(trRow => {
+                const tds = Array.from(trRow.querySelectorAll('td'));
+                const srcTd = tds[dragSrcIdx];
+                const dstTd = tds[dstIdx];
+                if (dragSrcIdx < dstIdx) {
+                    dstTd.after(srcTd);
+                } else {
+                    dstTd.before(srcTd);
+                }
+            });
+
+            dragSrcIdx = null;
+        });
+    });
+
+    // 加载数据
+    fetch("/api/stats")
+        .then(r => r.json())
+        .then(data => {
+            allStats = data.stats || [];
+            countBadge.textContent = allStats.length;
+            renderTable();
+        })
+        .catch(err => {
+            tbody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-danger">加载失败: ${err.message}</td></tr>`;
+        });
+
+    // 导出 Excel
+    document.getElementById("exportStatsBtn").addEventListener("click", () => {
+        if (allStats.length === 0) {
+            alert("无数据可导出");
+            return;
+        }
+        const headers = Array.from(headerRow.querySelectorAll('th')).map(th => th.textContent.trim().replace(/\s*⇅.*$/, ''));
+        const rows = allStats.map(s => {
+            const _suD = s.spec_upper_str ? (s.spec_upper_str.split('.')[1] || '').length : 0;
+            const _slD = s.spec_lower_str ? (s.spec_lower_str.split('.')[1] || '').length : 0;
+            const _specD = Math.max(3, _suD, _slD);
+            return [
+                s.item_name, s.item_note || '',
+                (s.spec_lower_str != null ? s.spec_lower_str : (s.spec_lower ?? '')),
+                (s.spec_upper_str != null ? s.spec_upper_str : (s.spec_upper ?? '')),
+                s.mean != null ? s.mean.toFixed(_specD) : '',
+                s.std != null ? Number(s.std).toFixed(2) : '',
+                s.cp != null ? Number(s.cp).toFixed(2) : '',
+                s.cpk != null ? Number(s.cpk).toFixed(2) : '',
+                s.count ?? '',
+                s.pass_rate != null ? `${s.pass_rate}%` : '',
+            ];
+        });
+        const csv = [headers, ...rows]
+            .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(","))
+            .join("\n");
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `数据统计汇总_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    // 窗口 resize 时重建预览图表
+    window.addEventListener('resize', () => {
+        if (previewChartInstance) {
+            previewChartInstance.resize();
+        }
+    });
+
+    {% endif %}
+});
+</script>
+{% endblock %}
