@@ -33,3 +33,4 @@ deploy/
 _debug_*.py
 generate_sample.py
 libs/
+data/

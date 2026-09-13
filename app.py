@@ -14,6 +14,7 @@
 """
 import os
 import pickle
+import time
 import uuid
 import json
 import threading
@@ -387,6 +388,22 @@ with app.app_context():
     db.create_all()
 
 
+def _cleanup_tmp_files(max_age_hours: int = 24):
+    """清理 uploads 目录下过期的临时 pkl 文件 (保留原始 Excel)"""
+    folder = app.config["UPLOAD_FOLDER"]
+    if not os.path.isdir(folder):
+        return
+    cutoff = time.time() - max_age_hours * 3600
+    for fname in os.listdir(folder):
+        if fname.endswith(".pkl"):
+            path = os.path.join(folder, fname)
+            try:
+                if os.path.getmtime(path) < cutoff:
+                    os.remove(path)
+            except OSError:
+                pass
+
+
 def _open_browser():
     """延迟打开默认浏览器访问应用首页"""
     try:
@@ -397,11 +414,13 @@ def _open_browser():
 
 if __name__ == "__main__":
     import sys
-    # 打包为 exe 后(sys.frozen=True) 用生产模式, 直接运行 Python 时用 debug 模式
-    DEBUG = not getattr(sys, 'frozen', False)
-    # debug 模式下 werkzeug reloader 会启动子进程, 仅在子进程打开浏览器避免重复
-    # 打包后(无 reloader) 直接打开
-    should_open = (not DEBUG) or (os.environ.get("WERKZEUG_RUN_MAIN") == "true")
-    if should_open:
-        threading.Timer(1.5, _open_browser).start()
-    app.run(debug=DEBUG, host="0.0.0.0", port=5000)
+    is_frozen = getattr(sys, "frozen", False)
+    # 生产模式: 打包 EXE 或命令行加 --serve 参数时使用 waitress
+    serve_mode = is_frozen or ("--serve" in sys.argv)
+    if serve_mode:
+        _cleanup_tmp_files()
+        from waitress import serve
+        serve(app, host="0.0.0.0", port=5000, threads=8)
+    else:
+        # 开发模式: python app.py
+        app.run(debug=True, host="0.0.0.0", port=5000)
