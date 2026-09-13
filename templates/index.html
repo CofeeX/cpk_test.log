@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex gap-3 align-items-start">
+
+    <!-- ============ 左侧边栏: 上传 + 测试项目筛选树 ============ -->
+    <aside class="flex-shrink-0 sidebar-aside" style="width: 320px;">
+        <div class="card shadow-sm sidebar-card">
+            <a href="/stats" class="btn btn-warning w-100 mb-2 text-decoration-none">
+                <i class="bi bi-bar-chart-steps"></i> 数据统计
+            </a>
+
+            <!-- 上传区域 (固定不滚动) -->
+            <div class="card-body flex-shrink-0">
+                <form id="uploadForm" enctype="multipart/form-data">
+
+                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#configModal">
+                        <i class="bi bi-gear"></i> 产品配置管理
+                    </button>
+
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="bi bi-cloud-arrow-up"></i> 导入测试记录</h5>
+                    </div>
+
+                    <label class="form-label">选择产品类别配置</label>
+                    <select class="form-select" id="productSelect">
+                        <option value="">-- 默认配置 --</option>
+                        {% for cfg in configs %}
+                        <option value="{{ cfg.name }}">{{ cfg.name }} ({{ cfg.test_items|length }}项)</option>
+                        {% endfor %}
+                    </select>
+
+                    <label class="form-label">选择 Excel 文件</label>
+                    <input class="form-control" type="file" id="fileInput" accept=".xlsx,.xls">
+
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary" id="uploadBtn">
+                            <i class="bi bi-upload"></i> 上传并分析
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 筛选树标题 (固定) -->
+            <div class="card-header bg-light d-flex align-items-center justify-content-between flex-shrink-0 flex-wrap gap-2">
+                <h6 class="mb-0"><i class="bi bi-funnel"></i> 测试项目筛选</h6>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" id="selectAllBtn" title="全部选中">
+                        <i class="bi bi-check2-square"></i> 全选
+                    </button>
+                    <button class="btn btn-outline-secondary" id="unselectAllBtn" title="全部取消">
+                        <i class="bi bi-square"></i> 全取消
+                    </button>
+                    <button class="btn btn-outline-secondary" id="expandAllBtn" title="展开/折叠全部">
+                        <i class="bi bi-chevron-double-down"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- 筛选树: 可滚动 (撑满剩余高度, 与外层滚动条同步可见) -->
+            <div class="card-body p-0 flex-grow-1 overflow-auto sidebar-filter-body" id="sidebarFilter">
+                <div class="text-muted small p-3">请先上传 Excel 数据以生成筛选树…</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 可拖拽分隔条: 水平拉伸左侧筛选栏 -->
+    <div class="sidebar-resizer" id="sidebarResizer" title="拖动以调整左侧栏宽度"></div>
+
+    <!-- ============ 主内容区 ============ -->
+    <main class="flex-grow-1 min-w-0">
+
+        <!-- 状态提示 -->
+        <div id="statusAlert" class="d-none"></div>
+
+        <!-- 统计概览 -->
+        <div id="overviewSection" class="d-none">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> 数据概览</h5>
+                    <div id="headerProgramName" class="d-none"></div>
+                    <span class="badge bg-primary" id="fileBadge"></span>
+                </div>
+                <div id="commonInfoSection"></div>
+                <div class="card-body">
+                    <div class="row g-3" id="statCards"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div id="chartsSection" class="d-none">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> 测试曲线图</h5>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary active" id="gridBtn">网格</button>
+                        <button class="btn btn-outline-secondary" id="listBtn">列表</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="chartsContainer" class="row g-3"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ============ 配置管理弹窗 ============ -->
+<div class="modal fade" id="configModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-gear"></i> 产品配置管理</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs mb-3" id="configTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-list">已保存配置</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-edit">编辑/新建配置</button>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <!-- 配置列表 -->
+                    <div class="tab-pane fade show active" id="tab-list">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="configTable">
+                                <thead><tr><th>产品名称</th><th>测试项目</th><th>操作</th></tr></thead>
+                                <tbody id="configTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- 配置编辑 -->
+                    <div class="tab-pane fade" id="tab-edit">
+                        <form id="configForm">
+                            <div class="mb-3">
+                                <label class="form-label">产品类别名称</label>
+                                <input class="form-control" name="category_name" id="cfgName" required>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">工作表</label>
+                                    <input class="form-control" name="sheet_name" id="cfgSheet" value="0">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">顶部跳过行</label>
+                                    <input class="form-control" type="number" min="0" id="cfgSkipTop" value="0" title="跳过顶部标题行数量 (如 SC 板=1)">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">元数据表头行</label>
+                                    <input class="form-control" type="number" min="1" id="cfgHeaderRows" value="5">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">固定列名行号</label>
+                                    <input class="form-control" type="number" id="cfgFixedHeaderRow" value="-1" title="固定列(序列号等)所在行, 相对跳过行后; -1 表示不用">
+                                </div>
+                            </div>
+                            <h6>固定列列名映射</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-4"><label class="form-label">序列号列</label><input class="form-control" id="col_sequence" value="序列号"></div>
+                                <div class="col-md-4"><label class="form-label">产品型号列</label><input class="form-control" id="col_product_model" value="产品型号"></div>
+                                <div class="col-md-4"><label class="form-label">工单号列</label><input class="form-control" id="col_work_order" placeholder="工单号"></div>
+                                <div class="col-md-4"><label class="form-label">测试员列</label><input class="form-control" id="col_tester" placeholder="测试员"></div>
+                                <div class="col-md-4"><label class="form-label">工装编号列</label><input class="form-control" id="col_fixture" placeholder="工装编号"></div>
+                                <div class="col-md-4"><label class="form-label">结论列</label><input class="form-control" id="col_result" placeholder="结论"></div>
+                                <div class="col-md-4"><label class="form-label">时间列</label><input class="form-control" id="col_time" placeholder="时间"></div>
+                            </div>
+                            <h6>表头行映射 (各元数据相对行号, 0开始)</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-md"><label class="form-label">项目名称行</label><input class="form-control" type="number" min="0" id="row_item_name" value="0"></div>
+                                <div class="col-md"><label class="form-label">项目备注行</label><input class="form-control" type="number" min="0" id="row_item_note" value="1"></div>
+                                <div class="col-md"><label class="form-label">参数变量行</label><input class="form-control" type="number" min="0" id="row_param_variable" value="2"></div>
+                                <div class="col-md"><label class="form-label">规格上限行</label><input class="form-control" type="number" min="0" id="row_spec_upper" value="3"></div>
+                                <div class="col-md"><label class="form-label">规格下限行</label><input class="form-control" type="number" min="0" id="row_spec_lower" value="4"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">关注测试项目 (逗号分隔, 留空则自动识别全部数值型项目)</label>
+                                <input class="form-control" id="cfgItems" placeholder="如: 电压,待机电流,温度">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">规格无限哨兵值 (逗号分隔, 如 999999999; 匹配时视为无限制)</label>
+                                <input class="form-control" id="cfgSpecInfinity" placeholder="如: 999999999">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">图表标题</label>
+                                <input class="form-control" id="cfgTitle" value="测试分析曲线图">
+                            </div>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> 保存配置</button>
+                            <button type="button" class="btn btn-outline-secondary" id="loadDefaultBtn">载入默认模板</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ 图表放大弹窗 ============ -->
+<div class="modal fade" id="chartZoomModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title"><i class="bi bi-zoom-in"></i> <span id="zoomModalTitle">图表详情</span></h5>
+                <div class="ms-3 d-flex align-items-center gap-2">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary" id="zoomDownloadBtn" title="下载 PNG">
+                            <i class="bi bi-download"></i> 下载
+                        </button>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+            </div>
+            <div class="modal-body p-0">
+                <div id="zoomChartBody" style="width:100%; height: calc(100vh - 60px);"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 供 main.js 读取的恢复状态
+window.__RESTORE_STATE__ = {
+    has_data: {{ has_data|tojson }},
+    filename: {{ filename|tojson }},
+    product_category: {{ product_category|tojson }}
+};
+</script>
+
+{% endblock %}
