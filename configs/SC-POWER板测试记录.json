@@ -1,0 +1,30 @@
+{
+  "category_name": "SC-POWER板测试记录",
+  "excel_config": {
+    "sheet_name": "Sheet1",
+    "skip_top_rows": 1,
+    "header_rows": 5,
+    "fixed_columns_header_row": 5,
+    "fixed_columns": {
+      "sequence": "序列号",
+      "product_model": "名称",
+      "work_order": "工单号",
+      "tester": "测试员",
+      "fixture": "工装编号",
+      "result": "结论",
+      "time": "时间"
+    },
+    "meta_row_mapping": {
+      "item_name": 0,
+      "item_note": 1,
+      "param_variable": 2,
+      "spec_upper": 3,
+      "spec_lower": 4
+    }
+  },
+  "test_items": [],
+  "chart_config": {
+    "title": "SC-POWER板 测试分析曲线图",
+    "y_axis_name": "测试值"
+  }
+}
