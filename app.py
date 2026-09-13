@@ -205,10 +205,16 @@ def upload():
     else:
         charts = Analyzer.all_items_chart_data(df)
 
+    # 调试限制已移除: 显示全部图表 (按规则3+4 自动分组后的所有图表)
+    # _DEBUG_MAX_CHARTS = 4
+    # if _DEBUG_MAX_CHARTS and len(charts) > _DEBUG_MAX_CHARTS:
+    #     charts = charts[:_DEBUG_MAX_CHARTS]
+
     # 统计: 产品数量(序列号去重)、分析项目数、图表数
     seq_col = "fix_sequence" if "fix_sequence" in df.columns else "sequence"
     product_count = int(pd.Series(df[seq_col].unique()).dropna().shape[0]) if seq_col in df.columns else len(df)
     # 规则3: 分析项目数 = 有上下限 (至少其一) 的数值型测试项目数
+    # (与 auto_grouped_chart_data 内部过滤逻辑一致: 仅 spec_lower 和 spec_upper 同时为 None 时排除)
     analysis_item_count = 0
     if "item_name" in df.columns and "spec_lower" in df.columns and "spec_upper" in df.columns:
         # 按 item_name 聚合, 取每组第一条判断规格限
