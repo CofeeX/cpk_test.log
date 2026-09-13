@@ -1,0 +1,305 @@
+/* CPK-PCBA - 自定义样式 */
+
+body {
+    background-color: #f5f7fa;
+}
+
+/* 主容器: 覆盖 Bootstrap .container 的固定宽度, 改为自适应以容纳左侧边栏 */
+main.container {
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+}
+
+/* ========== navbar 中的 Program Name (border 容器, bg-light 背景) ========== */
+#navProgramName > div.border {
+    width: 500px;
+    max-width: none;
+}
+#navProgramName > div.border > div.fw-semibold {
+    color: #f209f6;
+    width: 400px;
+    max-width: none;
+}
+
+/* ========== card-header 中的 Program Name ========== */
+#headerProgramName .fw-semibold {
+    max-width: 400px;
+}
+
+/* ========== 上传区精确样式 ========== */
+/* 产品类别配置 label: 固定宽 */
+form#uploadForm > div.row > div.col-md-5 > label.form-label {
+    width: 200px !important;
+}
+
+/* 产品类别下拉框: 宽度自适应 */
+select#productSelect {
+    width: auto !important;
+}
+
+/* 产品配置管理按钮: 蓝底白字, 高 40px */
+form#uploadForm > button.btn[data-bs-target="#configModal"] {
+    width: auto !important;
+    height: 40px !important;
+    color: #ffffff !important;
+    background-color: rgb(59, 130, 246) !important;
+}
+
+/* 卡片悬停效果 */
+.card {
+    border: none;
+    border-radius: 0.75rem;
+    transition: box-shadow 0.2s;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 图表容器 */
+.chart-box {
+    background: #fff;
+    border-radius: 0.5rem;
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+}
+
+.chart-box .chart-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chart-box .chart-body {
+    height: 320px;
+    width: 100%;
+}
+
+/* 放大按钮: 悬停高亮 */
+.chart-box .zoom-btn:hover {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+/* 放大 Modal: 全屏图表填充 (modal-content 用 flex 让 body 占满剩余空间) */
+#chartZoomModal .modal-content {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    border-radius: 0;
+    border: 0;
+}
+#chartZoomModal .modal-dialog.modal-fullscreen {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    max-width: 100%;
+}
+#chartZoomModal .modal-body {
+    background: #fff;
+    flex: 1 1 auto;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+}
+#zoomChartBody {
+    width: 100%;
+    height: 100% !important;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* 侧边栏筛选树: 允许换行显示主项目名+规格 */
+#sidebarFilter .list-group-item label.d-flex {
+    flex-wrap: nowrap;
+}
+#sidebarFilter .list-group-item .min-w-0 {
+    min-width: 0;
+}
+
+/* 需求2: 筛选框体与网页右侧滑动条一致, 始终占满视口高度可见 */
+.sidebar-aside {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    /* 与右侧页面滑动条同步: 让 aside 始终撑满视口高度 */
+    max-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    /* 允许 width 被 JS 修改 (内联样式优先级最高, 这里只是兜底) */
+    min-width: 240px;
+}
+
+/* 可拖拽水平分隔条: 左侧栏宽度调节器 */
+.sidebar-resizer {
+    flex-shrink: 0;
+    width: 6px;
+    cursor: col-resize;
+    background-color: transparent;
+    align-self: stretch;
+    position: relative;
+    z-index: 20;
+    transition: background-color 0.15s;
+    user-select: none;
+}
+.sidebar-resizer:hover,
+.sidebar-resizer.dragging {
+    background-color: #0d6efd;
+    box-shadow: 0 0 4px rgba(13, 110, 253, 0.4);
+}
+.sidebar-card {
+    /* 卡片占满 aside 高度, 内部 flex 让筛选区域自己滚动 */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 100vh;
+    overflow: hidden;
+}
+.sidebar-filter-body {
+    /* 筛选内容区: 占满剩余空间, 自身滚动, 不挤压上传区域 */
+    flex: 1 1 auto;
+    min-height: 200px;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    will-change: transform;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 需求1: 序号徽章样式 (筛选菜单 + 图表标题统一) */
+.sidebar-idx-badge,
+.chart-idx-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    min-width: 1.6rem;
+    text-align: center;
+    line-height: 1;
+    padding: 0.25rem 0.4rem;
+}
+.chart-idx-badge {
+    background-color: #0d6efd !important;
+    color: #fff;
+}
+
+/* 滚动联动: 当前图表对应的侧边栏项高亮 */
+.sidebar-chart-header-active {
+    background-color: #cfe2ff !important;
+    border-left: 3px solid #0d6efd !important;
+}
+.sidebar-chart-header-active .fw-semibold.small {
+    color: #084298;
+    font-weight: 700;
+}
+
+/* 需求3: 筛选子项(二级) 底色与主项目区分 */
+#sidebarFilter .sidebar-sub-item-label {
+    background-color: #f8f9fc;
+    border-left: 2px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.3rem 0.5rem;
+    margin: 2px 0;
+}
+#sidebarFilter .sidebar-sub-item-label:hover {
+    background-color: #eef2ff;
+    border-left-color: #6366f1;
+}
+/* 一级卡片与二级项目拉开视觉层次 (一级header默认白, 二级子列表带浅蓝底+圆角容器) */
+#sidebarFilter .collapse.show,
+#sidebarFilter .collapse:not(.show) {
+    background-color: #fbfcff;
+    border-radius: 0 0 0.5rem 0.5rem;
+    margin: 0 0.5rem 0.25rem 0.5rem;
+    padding: 0.1rem 0.25rem 0.25rem 0.25rem;
+}
+
+/* 网格模式: 每行两个图表; 列表模式: 每行一个 */
+#chartsContainer.view-grid .chart-wrapper {
+    flex: 0 0 50%;
+    max-width: 50%;
+}
+
+#chartsContainer.view-list .chart-wrapper {
+    flex: 0 0 100%;
+    max-width: 100%;
+}
+
+#chartsContainer.view-list .chart-body {
+    height: 400px;
+}
+
+/* 统计卡片 */
+.stat-card {
+    background: #fff;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border-left: 4px solid #0d6efd;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.stat-card .stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.stat-card .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #212529;
+}
+
+.stat-card .stat-unit {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: #6c757d;
+}
+
+/* 筛选按钮 */
+.filter-btn {
+    border-radius: 1.5rem;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.filter-btn.active {
+    background-color: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+}
+
+/* 上传按钮加载状态 */
+.btn-loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+/* 空状态提示 */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #adb5bd;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* 统计表格 */
+.stat-table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.stat-table td {
+    font-family: 'Courier New', monospace;
+}
