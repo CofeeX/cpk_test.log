@@ -377,7 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
             renderGroupPreview(stat, itemName);
         } else {
             // 回退: 单独请求该项目图表
-            fetch(`/api/chart-data?item=${encodeURIComponent(itemName)}`)
+            fetch(api(`/api/chart-data?item=${encodeURIComponent(itemName)}`))
                 .then(r => r.json())
                 .then(data => {
                     if (!data || !data.x_axis) {
@@ -822,7 +822,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // 加载数据
-    fetch("/api/stats")
+    fetch(api("/api/stats"))
         .then(r => r.json())
         .then(data => {
             allStats = data.stats || [];
