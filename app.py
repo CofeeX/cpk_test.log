@@ -33,6 +33,50 @@ from services.config_manager import ConfigManager
 app = Flask(__name__)
 app.config.from_object(Config)
 
+
+class URLPrefixMiddleware:
+    """为应用挂载到指定路径前缀下 (如 /cpk), 使所有路由/静态/API 均带前缀。
+
+    例如 URL_PREFIX=/cpk 时:
+      浏览器请求 /cpk/        -> 内部路由 /  页面
+      浏览器请求 /cpk/api/x   -> 内部路由 /api/x
+      url_for 生成的 /static/ -> /cpk/static/
+    Flask 内部路由逻辑不变, 仅 WSGI 层做前缀改写。
+    """
+
+    def __init__(self, wsgi_app, prefix):
+        self.wsgi_app = wsgi_app
+        self.prefix = (prefix or "").strip("/")
+        self.full_prefix = "/" + self.prefix if self.prefix else ""
+
+    def __call__(self, environ, start_response):
+        prefix = self.full_prefix
+        path = environ.get("PATH_INFO", "")
+
+        # 设置了前缀时, 只处理带前缀的请求; 未带前缀的请求改写后处理
+        if prefix:
+            if path == prefix:
+                # /cpk 精确匹配 -> 重写为 / (可由 /cpk/ -> / 逻辑覆盖, 保险起见保留)
+                path = "/"
+            elif path.startswith(prefix + "/"):
+                path = path[len(prefix):]
+            else:
+                # 不带前缀的路径: 追加前缀后仍交给应用 (例如直接访问 / 时)
+                path = prefix + (path if path.startswith("/") else "/" + path)
+
+        environ["PATH_INFO"] = path
+        script_name = environ.get("SCRIPT_NAME", "")
+        if script_name:
+            environ["SCRIPT_NAME"] = script_name + self.full_prefix
+        else:
+            environ["SCRIPT_NAME"] = self.full_prefix
+        return self.wsgi_app(environ, start_response)
+
+
+# 应用路径前缀 (WSGI 层注入)
+_prefix = app.config.get("URL_PREFIX") or ""
+app.wsgi_app = URLPrefixMiddleware(app.wsgi_app, _prefix)
+
 # 确保目录存在
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 os.makedirs(app.config["CONFIG_FOLDER"], exist_ok=True)

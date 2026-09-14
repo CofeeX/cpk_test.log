@@ -53,3 +53,7 @@ class Config:
 
     # 上传文件最大大小 (16MB)
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+
+    # 应用根路径前缀 (部署在局域网时挂到 /cpk/ 下), 空串表示不设前缀
+    # 访问地址: http://<服务器IP>:5000/cpk/
+    URL_PREFIX = os.environ.get("URL_PREFIX", "/cpk")

@@ -1,5 +1,11 @@
 /* CPK-PCBA - 前端交互逻辑 */
 
+// 拼接应用根路径 (含 /cpk 前缀) 与接口地址
+function api(path) {
+    const base = (window.BASE_URL || "").replace(/\/+$/, "");
+    return base + (path.startsWith("/") ? path : "/" + path);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     // ===== 元素引用 =====
     const uploadForm = document.getElementById("uploadForm");
@@ -54,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ====================================================================
     const restoreState = window.__RESTORE_STATE__;
     if (restoreState && restoreState.has_data) {
-        fetch("/api/session-charts")
+        fetch(api("/api/session-charts"))
             .then(r => r.json())
             .then(data => {
                 if (!data.has_data || !data.charts || data.charts.length === 0) return;
@@ -107,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
         uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 解析中...';
 
         try {
-            const resp = await fetch("/api/upload", { method: "POST", body: formData });
+            const resp = await fetch(api("/api/upload"), { method: "POST", body: formData });
             const data = await resp.json();
 
             if (!resp.ok) {
@@ -1274,7 +1280,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadConfigList() {
         try {
-            const resp = await fetch("/api/configs");
+            const resp = await fetch(api("/api/configs"));
             const data = await resp.json();
             const configs = data.configs || [];
             if (!configs.length) {
@@ -1301,7 +1307,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     window.loadConfigToForm = async function (name) {
-        const resp = await fetch(`/api/config/${encodeURIComponent(name)}`);
+        const resp = await fetch(api(`/api/config/${encodeURIComponent(name)}`));
         const cfg = await resp.json();
         document.getElementById("cfgName").value = cfg.category_name || "";
         document.getElementById("cfgSheet").value = cfg.excel_config?.sheet_name ?? 0;
@@ -1332,7 +1338,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.deleteConfig = async function (name) {
         if (!confirm(`确定删除配置 "${name}" 吗？`)) return;
-        const resp = await fetch(`/api/config/${encodeURIComponent(name)}`, { method: "DELETE" });
+        const resp = await fetch(api(`/api/config/${encodeURIComponent(name)}`), { method: "DELETE" });
         if (resp.ok) {
             showAlert("配置已删除", "success");
             loadConfigList();
@@ -1398,7 +1404,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 y_axis_name: "测试值",
             },
         };
-        const resp = await fetch("/api/config", {
+        const resp = await fetch(api("/api/config"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
