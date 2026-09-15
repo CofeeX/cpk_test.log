@@ -10,7 +10,8 @@
             <div class="card-body flex-shrink-0">
                 <form id="uploadForm" enctype="multipart/form-data">
 
-                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#configModal">
+                    <!-- 临时隐藏: 产品配置管理按钮 -->
+                    <button type="button" class="btn btn-outline-secondary d-none" data-bs-toggle="modal" data-bs-target="#configModal">
                         <i class="bi bi-gear"></i> 产品配置管理
                     </button>
 
@@ -18,8 +19,9 @@
                         <h5 class="mb-0"><i class="bi bi-cloud-arrow-up"></i> 导入测试记录</h5>
                     </div>
 
-                    <label class="form-label">选择产品类别配置</label>
-                    <select class="form-select" id="productSelect">
+                    <!-- 临时隐藏: 产品类别配置下拉框 -->
+                    <label class="form-label d-none">选择产品类别配置</label>
+                    <select class="form-select d-none" id="productSelect">
                         <option value="">-- 默认配置 --</option>
                         {% for cfg in configs %}
                         <option value="{{ cfg.name }}">{{ cfg.name }} ({{ cfg.test_items|length }}项)</option>
