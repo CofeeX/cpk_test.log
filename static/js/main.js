@@ -1288,7 +1288,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const configForm = document.getElementById("configForm");
     const loadDefaultBtn = document.getElementById("loadDefaultBtn");
 
-    configModal.addEventListener("show.bs.modal", loadConfigList);
+    configModal && configModal.addEventListener("show.bs.modal", loadConfigList);
 
     async function loadConfigList() {
         try {
@@ -1379,7 +1379,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("cfgTitle").value = "测试分析曲线图";
     });
 
-    configForm.addEventListener("submit", async (e) => {
+    configForm && configForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const name = document.getElementById("cfgName").value.trim();
         if (!name) return;
