@@ -3,28 +3,28 @@
 {% block content %}
 <div class="d-flex gap-3 align-items-start">
 
-    <!-- ============ 左侧边栏: 上传 + 测试项目筛选树 ============ -->
+    <!-- ============ å·¦ä¾§è¾¹æ : ä¸Šä¼  + æµ‹è¯•é¡¹ç›®ç­›é€‰æ ‘ ============ -->
     <aside class="flex-shrink-0 sidebar-aside" style="width: 320px;">
-        <div class="card shadow-sm sidebar-card">
-            <!-- 上传区域 (固定不滚动) -->
+        <div class="card shadow-sm sidebar-card" style="width: 320px; height: 214.615px;">
+            <!-- ä¸Šä¼ åŒºåŸŸ (å›ºå®šä¸æ»šåŠ¨) -->
             <div class="card-body flex-shrink-0">
                 <form id="uploadForm" enctype="multipart/form-data">
 
-                    <!-- 临时隐藏: 产品配置管理按钮 -->
+                    <!-- ä¸´æ—¶éšè—: äº§å“é…ç½®ç®¡ç†æŒ‰é’® -->
                     <button type="button" class="btn btn-outline-secondary d-none" data-bs-toggle="modal" data-bs-target="#configModal">
-                        <i class="bi bi-gear"></i> 产品配置管理
+                        <i class="bi bi-gear"></i> äº§å“é…ç½®ç®¡ç†
                     </button>
 
                     <div class="card-header bg-light">
-                        <h5 class="mb-0"><i class="bi bi-cloud-arrow-up"></i> 导入测试记录</h5>
+                        <h5 class="mb-0"><i class="bi bi-cloud-arrow-up"></i> å¯¼å…¥æµ‹è¯•è®°å½•</h5>
                     </div>
 
-                    <!-- 临时隐藏: 产品类别配置下拉框 -->
-                    <label class="form-label d-none">选择产品类别配置</label>
+                    <!-- ä¸´æ—¶éšè—: äº§å“ç±»åˆ«é…ç½®ä¸‹æ‹‰æ¡† -->
+                    <label class="form-label d-none">é€‰æ‹©äº§å“ç±»åˆ«é…ç½®</label>
                     <select class="form-select d-none" id="productSelect" style="width: 239.333px; height: 33.3333px; transform: matrix(1, 0, 0, 1, 0, -16.6667);">
-                        <option value="">-- 默认配置 --</option>
+                        <option value="">-- é»˜è®¤é…ç½® --</option>
                         {% for cfg in configs %}
-                        <option value="{{ cfg.name }}">{{ cfg.name }} ({{ cfg.test_items|length }}项)</option>
+                        <option value="{{ cfg.name }}">{{ cfg.name }} ({{ cfg.test_items|length }}é¡¹)</option>
                         {% endfor %}
                     </select>
 
@@ -33,48 +33,48 @@
 
                     <div class="mt-3">
                         <button type="submit" class="btn btn-primary" id="uploadBtn">
-                            <i class="bi bi-upload"></i> 上传并分析
+                            <i class="bi bi-upload"></i> ä¸Šä¼&nbsp;å¹¶åˆ†æž
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- 筛选树标题 (固定) -->
+            <!-- ç­›é€‰æ ‘æ ‡é¢˜ (å›ºå®š) -->
             <div class="card-header bg-light d-flex align-items-center justify-content-between flex-shrink-0 flex-wrap gap-2">
-                <h6 class="mb-0"><i class="bi bi-funnel"></i> 测试项目筛选</h6>
+                <h6 class="mb-0"><i class="bi bi-funnel"></i> æµ‹è¯•é¡¹ç›®ç­›é€‰</h6>
                 <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-secondary" id="selectAllBtn" title="全部选中">
-                        <i class="bi bi-check2-square"></i> 全选
+                    <button class="btn btn-outline-secondary" id="selectAllBtn" title="å…¨éƒ¨é€‰ä¸­">
+                        <i class="bi bi-check2-square"></i> å…¨é€‰
                     </button>
-                    <button class="btn btn-outline-secondary" id="unselectAllBtn" title="全部取消">
-                        <i class="bi bi-square"></i> 全取消
+                    <button class="btn btn-outline-secondary" id="unselectAllBtn" title="å…¨éƒ¨å–æ¶ˆ">
+                        <i class="bi bi-square"></i> å…¨å–æ¶ˆ
                     </button>
-                    <button class="btn btn-outline-secondary" id="expandAllBtn" title="展开/折叠全部">
+                    <button class="btn btn-outline-secondary" id="expandAllBtn" title="å±•å¼€/æŠ˜å&nbsp;å…¨éƒ¨">
                         <i class="bi bi-chevron-double-down"></i>
                     </button>
                 </div>
             </div>
-            <!-- 筛选树: 可滚动 (撑满剩余高度, 与外层滚动条同步可见) -->
+            <!-- ç­›é€‰æ ‘: å¯æ»šåŠ¨ (æ’‘æ»¡å‰©ä½™é«˜åº¦, ä¸Žå¤–å±‚æ»šåŠ¨æ¡åŒæ­¥å¯è§) -->
             <div class="card-body p-0 flex-grow-1 overflow-auto sidebar-filter-body" id="sidebarFilter">
-                <div class="text-muted small p-3">请先上传 Excel 数据以生成筛选树…</div>
+                <div class="text-muted small p-3">è¯·å…ˆä¸Šä¼&nbsp; Excel æ•°æ®ä»¥ç”Ÿæˆç­›é€‰æ&nbsp;‘â€¦</div>
             </div>
         </div>
     </aside>
 
-    <!-- 可拖拽分隔条: 水平拉伸左侧筛选栏 -->
-    <div class="sidebar-resizer" id="sidebarResizer" title="拖动以调整左侧栏宽度"></div>
+    <!-- å¯æ‹–æ‹½åˆ†éš”æ¡: æ°´å¹³æ‹‰ä¼¸å·¦ä¾§ç­›é€‰æ  -->
+    <div class="sidebar-resizer" id="sidebarResizer" title="æ‹–åŠ¨ä»¥è°ƒæ•´å·¦ä¾§æ&nbsp;å®½åº¦"></div>
 
-    <!-- ============ 主内容区 ============ -->
+    <!-- ============ ä¸»å†…å®¹åŒº ============ -->
     <main class="flex-grow-1 min-w-0">
 
-        <!-- 状态提示 -->
+        <!-- çŠ¶æ€æç¤º -->
         <div id="statusAlert" class="d-none"></div>
 
-        <!-- 统计概览 -->
+        <!-- ç»Ÿè®¡æ¦‚è§ˆ -->
         <div id="overviewSection" class="d-none">
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> 数据概览</h5>
+                    <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> æ•°æ®æ¦‚è§ˆ</h5>
                     <div id="headerProgramName" class="d-none"></div>
                     <span class="badge bg-primary" id="fileBadge"></span>
                 </div>
@@ -85,14 +85,14 @@
             </div>
         </div>
 
-        <!-- 图表区域 -->
+        <!-- å›¾è¡¨åŒºåŸŸ -->
         <div id="chartsSection" class="d-none">
             <div class="card shadow-sm">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> 测试曲线图</h5>
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> æµ‹è¯•æ›²çº¿å›¾</h5>
                     <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary active" id="gridBtn">网格</button>
-                        <button class="btn btn-outline-secondary" id="listBtn">列表</button>
+                        <button class="btn btn-outline-secondary active" id="gridBtn">ç½‘æ&nbsp;¼</button>
+                        <button class="btn btn-outline-secondary" id="listBtn">åˆ—è¡¨</button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -104,90 +104,90 @@
     </main>
 </div>
 
-<!-- ============ 配置管理弹窗 ============ -->
+<!-- ============ é…ç½®ç®¡ç†å¼¹çª— ============ -->
 <div class="modal fade" id="configModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-gear"></i> 产品配置管理</h5>
+                <h5 class="modal-title"><i class="bi bi-gear"></i> äº§å“é…ç½®ç®¡ç†</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <ul class="nav nav-tabs mb-3" id="configTabs">
                     <li class="nav-item">
-                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-list">已保存配置</button>
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-list">å·²ä¿å­˜é…ç½®</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-edit">编辑/新建配置</button>
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-edit">ç¼–è¾‘/æ–°å»ºé…ç½®</button>
                     </li>
                 </ul>
                 <div class="tab-content">
-                    <!-- 配置列表 -->
+                    <!-- é…ç½®åˆ—è¡¨ -->
                     <div class="tab-pane fade show active" id="tab-list">
                         <div class="table-responsive">
                             <table class="table table-hover" id="configTable">
-                                <thead><tr><th>产品名称</th><th>测试项目</th><th>操作</th></tr></thead>
+                                <thead><tr><th>äº§å“åç§°</th><th>æµ‹è¯•é¡¹ç›®</th><th>æ“ä½œ</th></tr></thead>
                                 <tbody id="configTableBody"></tbody>
                             </table>
                         </div>
                     </div>
-                    <!-- 配置编辑 -->
+                    <!-- é…ç½®ç¼–è¾‘ -->
                     <div class="tab-pane fade" id="tab-edit">
                         <form id="configForm">
                             <div class="mb-3">
-                                <label class="form-label">产品类别名称</label>
+                                <label class="form-label">äº§å“ç±»åˆ«åç§°</label>
                                 <input class="form-control" name="category_name" id="cfgName" required="">
                             </div>
                             <div class="row g-2 mb-3">
                                 <div class="col-md-3">
-                                    <label class="form-label">工作表</label>
+                                    <label class="form-label">å·¥ä½œè¡¨</label>
                                     <input class="form-control" name="sheet_name" id="cfgSheet" value="0">
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label">顶部跳过行</label>
-                                    <input class="form-control" type="number" min="0" id="cfgSkipTop" value="0" title="跳过顶部标题行数量 (如 SC 板=1)">
+                                    <label class="form-label">é¡¶éƒ¨è·³è¿‡è¡Œ</label>
+                                    <input class="form-control" type="number" min="0" id="cfgSkipTop" value="0" title="è·³è¿‡é¡¶éƒ¨æ&nbsp;‡é¢˜è¡Œæ•°é‡ (å¦‚ SC æ¿=1)">
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label">元数据表头行</label>
+                                    <label class="form-label">å…ƒæ•°æ®è¡¨å¤´è¡Œ</label>
                                     <input class="form-control" type="number" min="1" id="cfgHeaderRows" value="5">
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label">固定列名行号</label>
-                                    <input class="form-control" type="number" id="cfgFixedHeaderRow" value="-1" title="固定列(序列号等)所在行, 相对跳过行后; -1 表示不用">
+                                    <label class="form-label">å›ºå®šåˆ—åè¡Œå·</label>
+                                    <input class="form-control" type="number" id="cfgFixedHeaderRow" value="-1" title="å›ºå®šåˆ—(åºåˆ—å·ç­‰)æ‰€åœ¨è¡Œ, ç›¸å¯¹è·³è¿‡è¡ŒåŽ; -1 è¡¨ç¤ºä¸ç”¨">
                                 </div>
                             </div>
-                            <h6>固定列列名映射</h6>
+                            <h6>å›ºå®šåˆ—åˆ—åæ˜&nbsp;å°„</h6>
                             <div class="row g-2 mb-3">
-                                <div class="col-md-4"><label class="form-label">序列号列</label><input class="form-control" id="col_sequence" value="序列号"></div>
-                                <div class="col-md-4"><label class="form-label">产品型号列</label><input class="form-control" id="col_product_model" value="产品型号"></div>
-                                <div class="col-md-4"><label class="form-label">工单号列</label><input class="form-control" id="col_work_order" placeholder="工单号"></div>
-                                <div class="col-md-4"><label class="form-label">测试员列</label><input class="form-control" id="col_tester" placeholder="测试员"></div>
-                                <div class="col-md-4"><label class="form-label">工装编号列</label><input class="form-control" id="col_fixture" placeholder="工装编号"></div>
-                                <div class="col-md-4"><label class="form-label">结论列</label><input class="form-control" id="col_result" placeholder="结论"></div>
-                                <div class="col-md-4"><label class="form-label">时间列</label><input class="form-control" id="col_time" placeholder="时间"></div>
+                                <div class="col-md-4"><label class="form-label">åºåˆ—å·åˆ—</label><input class="form-control" id="col_sequence" value="åºåˆ—å·"></div>
+                                <div class="col-md-4"><label class="form-label">äº§å“åž‹å·åˆ—</label><input class="form-control" id="col_product_model" value="äº§å“åž‹å·"></div>
+                                <div class="col-md-4"><label class="form-label">å·¥å•å·åˆ—</label><input class="form-control" id="col_work_order" placeholder="å·¥å•å·"></div>
+                                <div class="col-md-4"><label class="form-label">æµ‹è¯•å‘˜åˆ—</label><input class="form-control" id="col_tester" placeholder="æµ‹è¯•å‘˜"></div>
+                                <div class="col-md-4"><label class="form-label">å·¥è£…ç¼–å·åˆ—</label><input class="form-control" id="col_fixture" placeholder="å·¥è£…ç¼–å·"></div>
+                                <div class="col-md-4"><label class="form-label">ç»“è®ºåˆ—</label><input class="form-control" id="col_result" placeholder="ç»“è®º"></div>
+                                <div class="col-md-4"><label class="form-label">æ—¶é—´åˆ—</label><input class="form-control" id="col_time" placeholder="æ—¶é—´"></div>
                             </div>
-                            <h6>表头行映射 (各元数据相对行号, 0开始)</h6>
+                            <h6>è¡¨å¤´è¡Œæ˜&nbsp;å°„ (å„å…ƒæ•°æ®ç›¸å¯¹è¡Œå·, 0å¼€å§‹)</h6>
                             <div class="row g-2 mb-3">
-                                <div class="col-md"><label class="form-label">项目名称行</label><input class="form-control" type="number" min="0" id="row_item_name" value="0"></div>
-                                <div class="col-md"><label class="form-label">项目备注行</label><input class="form-control" type="number" min="0" id="row_item_note" value="1"></div>
-                                <div class="col-md"><label class="form-label">参数变量行</label><input class="form-control" type="number" min="0" id="row_param_variable" value="2"></div>
-                                <div class="col-md"><label class="form-label">规格上限行</label><input class="form-control" type="number" min="0" id="row_spec_upper" value="3"></div>
-                                <div class="col-md"><label class="form-label">规格下限行</label><input class="form-control" type="number" min="0" id="row_spec_lower" value="4"></div>
+                                <div class="col-md"><label class="form-label">é¡¹ç›®åç§°è¡Œ</label><input class="form-control" type="number" min="0" id="row_item_name" value="0"></div>
+                                <div class="col-md"><label class="form-label">é¡¹ç›®å¤‡æ³¨è¡Œ</label><input class="form-control" type="number" min="0" id="row_item_note" value="1"></div>
+                                <div class="col-md"><label class="form-label">å‚æ•°å˜é‡è¡Œ</label><input class="form-control" type="number" min="0" id="row_param_variable" value="2"></div>
+                                <div class="col-md"><label class="form-label">è§„æ&nbsp;¼ä¸Šé™è¡Œ</label><input class="form-control" type="number" min="0" id="row_spec_upper" value="3"></div>
+                                <div class="col-md"><label class="form-label">è§„æ&nbsp;¼ä¸‹é™è¡Œ</label><input class="form-control" type="number" min="0" id="row_spec_lower" value="4"></div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">关注测试项目 (逗号分隔, 留空则自动识别全部数值型项目)</label>
-                                <input class="form-control" id="cfgItems" placeholder="如: 电压,待机电流,温度">
+                                <label class="form-label">å…³æ³¨æµ‹è¯•é¡¹ç›® (é€—å·åˆ†éš”, ç•™ç©ºåˆ™è‡ªåŠ¨è¯†åˆ«å…¨éƒ¨æ•°å€¼åž‹é¡¹ç›®)</label>
+                                <input class="form-control" id="cfgItems" placeholder="å¦‚: ç”µåŽ‹,å¾…æœºç”µæµ,æ¸©åº¦">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">规格无限哨兵值 (逗号分隔, 如 999999999; 匹配时视为无限制)</label>
-                                <input class="form-control" id="cfgSpecInfinity" placeholder="如: 999999999">
+                                <label class="form-label">è§„æ&nbsp;¼æ—&nbsp;é™å“¨å…µå€¼ (é€—å·åˆ†éš”, å¦‚ 999999999; åŒ¹é…æ—¶è§†ä¸ºæ—&nbsp;é™åˆ¶)</label>
+                                <input class="form-control" id="cfgSpecInfinity" placeholder="å¦‚: 999999999">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">图表标题</label>
-                                <input class="form-control" id="cfgTitle" value="测试分析曲线图">
+                                <label class="form-label">å›¾è¡¨æ&nbsp;‡é¢˜</label>
+                                <input class="form-control" id="cfgTitle" value="æµ‹è¯•åˆ†æžæ›²çº¿å›¾">
                             </div>
-                            <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> 保存配置</button>
-                            <button type="button" class="btn btn-outline-secondary" id="loadDefaultBtn">载入默认模板</button>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> ä¿å­˜é…ç½®</button>
+                            <button type="button" class="btn btn-outline-secondary" id="loadDefaultBtn">è½½å…¥é»˜è®¤æ¨¡æ¿</button>
                         </form>
                     </div>
                 </div>
@@ -196,16 +196,16 @@
     </div>
 </div>
 
-<!-- ============ 图表放大弹窗 ============ -->
+<!-- ============ å›¾è¡¨æ”¾å¤§å¼¹çª— ============ -->
 <div class="modal fade" id="chartZoomModal" tabindex="-1">
     <div class="modal-dialog modal-fullscreen">
         <div class="modal-content">
             <div class="modal-header bg-light">
-                <h5 class="modal-title"><i class="bi bi-zoom-in"></i> <span id="zoomModalTitle">图表详情</span></h5>
+                <h5 class="modal-title"><i class="bi bi-zoom-in"></i> <span id="zoomModalTitle">å›¾è¡¨è¯¦æƒ…</span></h5>
                 <div class="ms-3 d-flex align-items-center gap-2">
                     <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary" id="zoomDownloadBtn" title="下载 PNG">
-                            <i class="bi bi-download"></i> 下载
+                        <button class="btn btn-outline-secondary" id="zoomDownloadBtn" title="ä¸‹è½½ PNG">
+                            <i class="bi bi-download"></i> ä¸‹è½½
                         </button>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -219,7 +219,7 @@
 </div>
 
 <script>
-// 供 main.js 读取的恢复状态
+// ä¾› main.js è¯»å–çš„æ¢å¤çŠ¶æ€
 window.__RESTORE_STATE__ = {
     has_data: {{ has_data|tojson }},
     filename: {{ filename|tojson }},
