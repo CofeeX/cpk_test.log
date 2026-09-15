@@ -28,6 +28,28 @@ main.container {
 }
 
 /* ========== 上传区精确样式 ========== */
+/* 确保上传区内所有文字清晰可见 (深色文字 + 白色背景) */
+.sidebar-card .card-body,
+.sidebar-card .card-header {
+    color: #212529 !important;
+}
+.sidebar-card .form-label {
+    color: #212529 !important;
+    font-weight: 500;
+}
+.sidebar-card .form-control,
+.sidebar-card .form-select {
+    color: #212529 !important;
+    background-color: #ffffff !important;
+}
+.sidebar-card .card-header.bg-light {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+}
+.sidebar-card h5,
+.sidebar-card h6 {
+    color: #212529 !important;
+}
 /* 产品类别配置 label: 固定宽 */
 form#uploadForm > div.row > div.col-md-5 > label.form-label {
     width: 200px !important;
