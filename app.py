@@ -453,8 +453,8 @@ def _open_browser():
 
 if __name__ == "__main__":
     import sys
-    # 打包为 exe 后(sys.frozen=True) 用生产模式, 直接运行 Python 时用 debug 模式
-    DEBUG = not getattr(sys, 'frozen', False)
+    # 关闭 debug 模式以获得稳定服务 (避免 reloader 频繁重启导致代理判定上游不健康)
+    DEBUG = False
     # debug 模式下 werkzeug reloader 会启动子进程, 仅在子进程打开浏览器避免重复
     # 打包后(无 reloader) 直接打开
     should_open = (not DEBUG) or (os.environ.get("WERKZEUG_RUN_MAIN") == "true")
