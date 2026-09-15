@@ -1,13 +1,7 @@
 /* CPK-PCBA - 自定义样式 */
 
-/* 强制浅色模式, 阻止浏览器自动深色模式导致文字不可见 */
-:root {
-    color-scheme: light !important;
-}
-
 body {
     background-color: #f5f7fa;
-    color: #212529;
 }
 
 /* 主容器: 覆盖 Bootstrap .container 的固定宽度, 改为自适应以容纳左侧边栏 */
@@ -34,28 +28,6 @@ main.container {
 }
 
 /* ========== 上传区精确样式 ========== */
-/* 确保上传区内所有文字清晰可见 (深色文字 + 白色背景) */
-.sidebar-card .card-body,
-.sidebar-card .card-header {
-    color: #212529 !important;
-}
-.sidebar-card .form-label {
-    color: #212529 !important;
-    font-weight: 500;
-}
-.sidebar-card .form-control,
-.sidebar-card .form-select {
-    color: #212529 !important;
-    background-color: #ffffff !important;
-}
-.sidebar-card .card-header.bg-light {
-    background-color: #f8f9fa !important;
-    color: #212529 !important;
-}
-.sidebar-card h5,
-.sidebar-card h6 {
-    color: #212529 !important;
-}
 /* 产品类别配置 label: 固定宽 */
 form#uploadForm > div.row > div.col-md-5 > label.form-label {
     width: 200px !important;
@@ -190,9 +162,6 @@ form#uploadForm > button.btn[data-bs-target="#configModal"] {
     height: 100%;
     max-height: 100vh;
     overflow: hidden;
-    /* 明确白色背景 + 深色文字, 防止浏览器深色模式反转 */
-    background-color: #ffffff !important;
-    color: #212529 !important;
 }
 .sidebar-filter-body {
     /* 筛选内容区: 占满剩余空间, 自身滚动, 不挤压上传区域 */
