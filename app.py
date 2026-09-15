@@ -53,6 +53,15 @@ class URLPrefixMiddleware:
         prefix = self.full_prefix
         path = environ.get("PATH_INFO", "")
 
+        # 健康检查: 无论是否带前缀, /health 都返回 200 (供反向代理探活)
+        if path in ("/health", prefix + "/health"):
+            body = b'{"status":"ok"}'
+            start_response("200 OK", [
+                ("Content-Type", "application/json"),
+                ("Content-Length", str(len(body))),
+            ])
+            return [body]
+
         # 设置了前缀时, 只处理带前缀的请求; 未带前缀的请求改写后处理
         if prefix:
             if path == prefix:
@@ -60,8 +69,17 @@ class URLPrefixMiddleware:
                 path = "/"
             elif path.startswith(prefix + "/"):
                 path = path[len(prefix):]
+            elif path == "/":
+                # 根路径: 重定向到带前缀的首页
+                body = b'<html><body>Redirecting...</body></html>'
+                start_response("302 Found", [
+                    ("Location", prefix + "/"),
+                    ("Content-Type", "text/html"),
+                    ("Content-Length", str(len(body))),
+                ])
+                return [body]
             else:
-                # 不带前缀的路径: 追加前缀后仍交给应用 (例如直接访问 / 时)
+                # 其他不带前缀的路径: 追加前缀后仍交给应用
                 path = prefix + (path if path.startswith("/") else "/" + path)
 
         environ["PATH_INFO"] = path
