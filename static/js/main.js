@@ -41,16 +41,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // 导航栏"数据统计"按钮仅在解析出数据后启用
-    function enableStatsNav() {
-        const btn = document.getElementById("navStatsBtn");
-        if (btn) {
-            btn.classList.remove("disabled");
-            btn.removeAttribute("aria-disabled");
-            btn.title = "查看数据统计";
-        }
-    }
-
     // 当前数据存储
     let chartInstances = [];
     let wrapperElements = [];   // 按 chartIdx 对应 DOM wrapper (.chart-wrapper) + echartsInstance
@@ -100,7 +90,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 renderSidebarTree(currentCharts);
                 renderCharts(currentCharts);
                 overviewSection.classList.remove("d-none");
-                enableStatsNav();
             })
             .catch(() => { /* 静默失败 */ });
     }
@@ -152,7 +141,6 @@ document.addEventListener("DOMContentLoaded", () => {
             renderSidebarTree(currentCharts);
             renderCharts(currentCharts);
             renderOverview(data);
-            enableStatsNav();
         } catch (err) {
             showAlert("请求失败: " + err.message, "danger");
         } finally {
