@@ -70,14 +70,8 @@ class URLPrefixMiddleware:
             elif path.startswith(prefix + "/"):
                 path = path[len(prefix):]
             elif path == "/":
-                # 根路径: 重定向到带前缀的首页
-                body = b'<html><body>Redirecting...</body></html>'
-                start_response("302 Found", [
-                    ("Location", prefix + "/"),
-                    ("Content-Type", "text/html"),
-                    ("Content-Length", str(len(body))),
-                ])
-                return [body]
+                # 根路径: 直接路由到首页 (返回 200, 供反向代理健康检查通过)
+                path = "/"
             else:
                 # 其他不带前缀的路径: 追加前缀后仍交给应用
                 path = prefix + (path if path.startswith("/") else "/" + path)
